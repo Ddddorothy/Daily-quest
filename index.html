@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>每日任務 — Daily Quest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0c1a;
+    --surface: #171525;
+    --surface2: #1f1c30;
+    --surface3: #2a2640;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --purple: #7c5cfc;
+    --purple-light: #a98fff;
+    --purple-dim: rgba(124,92,252,0.15);
+    --teal: #2dd4bf;
+    --teal-dim: rgba(45,212,191,0.12);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.12);
+    --pink: #f472b6;
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --text: #f0eeff;
+    --text2: rgba(240,238,255,0.6);
+    --text3: rgba(240,238,255,0.3);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* bg decoration */
+  body::before {
+    content: '';
+    position: fixed; top: -200px; right: -200px;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,92,252,0.12) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; bottom: -200px; left: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(45,212,191,0.07) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+
+  .app {
+    position: relative; z-index: 1;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 24px 16px 80px;
+  }
+
+  /* header */
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--purple);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(124,92,252,0.5);
+  }
+  .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+  .logo-text span { color: var(--purple-light); }
+  .date-chip {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px; color: var(--text2);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 5px 10px; border-radius: 20px;
+  }
+
+  /* streak card */
+  .streak-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    position: relative; overflow: hidden;
+  }
+  .streak-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--amber), var(--pink), var(--purple));
+  }
+  .streak-inner { display: flex; align-items: center; gap: 14px; }
+  .flame-wrap {
+    font-size: 36px; line-height: 1;
+    filter: drop-shadow(0 0 12px rgba(251,191,36,0.6));
+    transition: transform 0.3s;
+  }
+  .flame-wrap.pop { animation: flamePop 0.4s ease; }
+  @keyframes flamePop {
+    0%  { transform: scale(1); }
+    50% { transform: scale(1.4) rotate(-8deg); }
+    100%{ transform: scale(1); }
+  }
+  .streak-meta { flex: 1; }
+  .streak-num {
+    font-size: 32px; font-weight: 700;
+    font-family: 'Space Mono', monospace;
+    color: var(--amber);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(251,191,36,0.4);
+  }
+  .streak-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+  .week-dots { display: flex; gap: 5px; }
+  .wd {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; font-family: 'Space Mono', monospace;
+    transition: transform 0.2s;
+  }
+  .wd-done { background: var(--amber); color: #3d2a00; }
+  .wd-today { background: transparent; border: 2px solid var(--amber); color: var(--amber); }
+  .wd-future { background: var(--surface2); border: 1px solid var(--border); color: var(--text3); }
+
+  /* level / xp */
+  .xp-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 14px;
+  }
+  .xp-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .level-tag {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--purple-dim);
+    border: 1px solid rgba(124,92,252,0.3);
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; color: var(--purple-light);
+  }
+  .xp-nums { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text2); }
+  .xp-track {
+    height: 8px; border-radius: 10px;
+    background: var(--surface3);
+    overflow: hidden;
+  }
+  .xp-fill {
+    height: 100%; border-radius: 10px;
+    background: linear-gradient(90deg, var(--purple), var(--purple-light));
+    transition: width 0.8s cubic-bezier(.4,1.4,.6,1);
+    box-shadow: 0 0 10px rgba(124,92,252,0.5);
+  }
+
+  /* stats row */
+  .stats-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .stat-box {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+  }
+  .stat-val { font-size: 22px; font-weight: 700; font-family: 'Space Mono', monospace; }
+  .stat-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  /* tabs */
+  .tabs {
+    display: flex; gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1; padding: 8px;
+    border-radius: 6px; border: none;
+    background: transparent;
+    font-family: 'Sora', sans-serif;
+    font-size: 13px; font-weight: 500;
+    color: var(--text2); cursor: pointer;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: var(--purple);
+    color: white;
+    box-shadow: 0 0 16px rgba(124,92,252,0.5);
+  }
+
+  /* quest cards */
+  .quest-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .quest-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 13px 15px;
+    display: flex; align-items: center; gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    position: relative; overflow: hidden;
+    user-select: none;
+  }
+  .quest-card:hover { border-color: var(--border2); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .quest-card:active { transform: scale(0.99); }
+  .quest-card.done { opacity: 0.45; }
+  .quest-card.done .qtitle { text-decoration: line-through; }
+  .quest-card.flash-complete { animation: completeFlash 0.5s ease forwards; }
+  @keyframes completeFlash {
+    0%  { background: var(--surface); }
+    40% { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.4); }
+    100%{ background: var(--surface); }
+  }
+  .q-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .q-body { flex: 1; min-width: 0; }
+  .qtitle { font-size: 14px; font-weight: 600; color: var(--text); }
+  .qdesc { font-size: 12px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .q-reward-tag {
+    display: inline-block; margin-top: 4px;
+    font-size: 10px; color: var(--teal);
+    background: var(--teal-dim);
+    padding: 2px 8px; border-radius: 10px;
+    border: 1px solid rgba(45,212,191,0.2);
+  }
+  .q-xp {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px; font-weight: 700;
+    padding: 4px 9px; border-radius: 20px;
+    flex-shrink: 0;
+  }
+  .xp-s { background: var(--purple-dim); color: var(--purple-light); border: 1px solid rgba(124,92,252,0.3); }
+  .xp-m { background: var(--teal-dim); color: var(--teal); border: 1px solid rgba(45,212,191,0.3); }
+  .xp-l { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(251,191,36,0.3); }
+  .q-check {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid var(--border2);
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: transparent;
+    transition: all 0.2s;
+  }
+  .quest-card.done .q-check { background: var(--green); border-color: var(--green); color: #012a12; }
+
+  .quest-card .xp-float {
+    position: absolute; right: 60px; top: 50%;
+    font-family: 'Space Mono', monospace;
+    font-size: 16px; font-weight: 700; color: var(--green);
+    opacity: 0; pointer-events: none;
+    animation: none;
+  }
+  .quest-card.flash-complete .xp-float {
+    animation: floatUp 0.9s ease forwards;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-40px); }
+  }
+
+  /* add button */
+  .add-btn {
+    width: 100%; padding: 12px;
+    border: 1.5px dashed rgba(124,92,252,0.3);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--purple-light);
+    font-size: 14px; font-weight: 500;
+    font-family: 'Sora', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 14px;
+  }
+  .add-btn:hover { border-color: var(--purple); background: var(--purple-dim); box-shadow: 0 0 20px rgba(124,92,252,0.2); }
+
+  /* empty state */
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--text2); font-size: 14px;
+  }
+  .empty-state .big-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* reward tab */
+  .reward-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .rs-title {
+    font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--text2); margin-bottom: 12px;
+  }
+  .reward-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .reward-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .ri-icon { font-size: 18px; }
+  .ri-name { flex: 1; font-size: 13px; color: var(--text); }
+  .ri-unlocked { font-size: 11px; font-weight: 700; color: var(--green); letter-spacing: 0.3px; }
+  .ri-locked { font-size: 11px; color: var(--text3); font-family: 'Space Mono', monospace; }
+
+  /* modal overlay */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center;
+    z-index: 100; padding: 16px;
+  }
+  .overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    padding: 22px;
+    width: 100%; max-width: 400px;
+    animation: modalIn 0.25s cubic-bezier(.4,1.4,.6,1);
+  }
+  @keyframes modalIn {
+    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--text); }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 5px; margin-top: 12px; display: block; }
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-family: 'Sora', sans-serif;
+    font-size: 14px; color: var(--text);
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,92,252,0.15); }
+  .form-input::placeholder { color: var(--text3); }
+  textarea.form-input { resize: vertical; min-height: 60px; }
+
+  .icon-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .icon-opt {
+    width: 38px; height: 38px; border-radius: 9px;
+    background: var(--surface2); border: 1.5px solid transparent;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; cursor: pointer; transition: all 0.15s;
+  }
+  .icon-opt:hover { border-color: var(--border2); }
+  .icon-opt.sel { border-color: var(--purple); background: var(--purple-dim); box-shadow: 0 0 10px rgba(124,92,252,0.3); }
+
+  .xp-row { display: flex; gap: 6px; margin-top: 6px; }
+  .xp-pick {
+    flex: 1; padding: 8px 6px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface2);
+    font-family: 'Space Mono', monospace;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    color: var(--text2); transition: all 0.15s;
+    text-align: center;
+  }
+  .xp-pick:hover { border-color: var(--border2); }
+  .xp-pick.sel { border-color: var(--purple); background: var(--purple-dim); color: var(--purple-light); }
+
+  .modal-btns { display: flex; gap: 8px; margin-top: 18px; }
+  .btn-cancel {
+    flex: 1; padding: 10px;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'Sora', sans-serif; font-size: 14px;
+    color: var(--text2); cursor: pointer; transition: all 0.15s;
+  }
+  .btn-cancel:hover { border-color: var(--border2); color: var(--text); }
+  .btn-save {
+    flex: 2; padding: 10px;
+    background: var(--purple); border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 700;
+    color: white; cursor: pointer;
+    box-shadow: 0 0 20px rgba(124,92,252,0.5);
+    transition: all 0.15s;
+  }
+  .btn-save:hover { background: var(--purple-light); box-shadow: 0 0 28px rgba(124,92,252,0.7); }
+
+  /* level up modal */
+  .lu-box {
+    text-align: center; padding: 8px 0;
+  }
+  .lu-badge {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: var(--purple-dim);
+    border: 2px solid var(--purple);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px; margin: 0 auto 14px;
+    box-shadow: 0 0 40px rgba(124,92,252,0.5);
+    animation: luPulse 1.5s infinite;
+  }
+  @keyframes luPulse {
+    0%,100% { box-shadow: 0 0 20px rgba(124,92,252,0.5); }
+    50%      { box-shadow: 0 0 50px rgba(124,92,252,0.9); }
+  }
+  .lu-title { font-size: 24px; font-weight: 700; color: var(--purple-light); margin-bottom: 6px; }
+  .lu-sub { font-size: 14px; color: var(--text2); margin-bottom: 18px; }
+  .btn-awesome {
+    width: 100%; padding: 12px;
+    background: var(--purple); border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700;
+    color: white; cursor: pointer;
+    box-shadow: 0 0 20px rgba(124,92,252,0.5);
+  }
+
+  /* toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 11px 20px; border-radius: 30px;
+    font-size: 14px; font-weight: 500;
+    opacity: 0; transition: all 0.25s;
+    pointer-events: none; z-index: 500;
+    white-space: nowrap;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    max-width: 90vw;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* streak milestone notification */
+  .milestone-badge {
+    display: none;
+    background: linear-gradient(135deg, var(--amber-dim), rgba(244,114,182,0.1));
+    border: 1px solid rgba(251,191,36,0.3);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    font-size: 13px; color: var(--amber);
+    animation: slideIn 0.4s ease;
+  }
+  .milestone-badge.show { display: block; }
+  @keyframes slideIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+
+  @media (max-width: 400px) {
+    .streak-num { font-size: 26px; }
+    .wd { width: 25px; height: 25px; font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- top bar -->
+  <div class="top-bar">
+    <div class="logo">
+      <div class="logo-icon">⚔️</div>
+      <div class="logo-text">Daily<span>Quest</span></div>
+    </div>
+    <div class="date-chip" id="date-chip"></div>
+  </div>
+
+  <!-- milestone -->
+  <div class="milestone-badge" id="milestone"></div>
+
+  <!-- streak card -->
+  <div class="streak-card">
+    <div class="streak-inner">
+      <div class="flame-wrap" id="flame">🔥</div>
+      <div class="streak-meta">
+        <div class="streak-num" id="streak-num">0</div>
+        <div class="streak-sub">天連勝</div>
+      </div>
+      <div class="week-dots" id="week-dots"></div>
+    </div>
+  </div>
+
+  <!-- xp bar -->
+  <div class="xp-card">
+    <div class="xp-top">
+      <div class="level-tag">
+        <span>⚡</span>
+        <span id="level-label">Lv.1 新手</span>
+      </div>
+      <div class="xp-nums" id="xp-nums">0 / 100 XP</div>
+    </div>
+    <div class="xp-track">
+      <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- stats -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-val" id="s-done" style="color:var(--green)">0</div>
+      <div class="stat-lbl">今日完成</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="s-total" style="color:var(--purple-light)">0</div>
+      <div class="stat-lbl">任務總數</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-val" id="s-xp" style="color:var(--amber)">0</div>
+      <div class="stat-lbl">累積 XP</div>
+    </div>
+  </div>
+
+  <!-- tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('today')">今日任務</button>
+    <button class="tab" onclick="switchTab('rewards')">獎勵寶庫</button>
+  </div>
+
+  <!-- today -->
+  <div id="tab-today">
+    <div class="quest-list" id="quest-list"></div>
+    <button class="add-btn" onclick="openAdd()">＋ 新增任務</button>
+  </div>
+
+  <!-- rewards -->
+  <div id="tab-rewards" style="display:none">
+    <div class="reward-section">
+      <div class="rs-title">升級獎勵</div>
+      <div id="lv-rewards"></div>
+    </div>
+    <div class="reward-section">
+      <div class="rs-title">連勝里程碑</div>
+      <div id="st-rewards"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- add quest modal -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <div class="modal-title">新增任務</div>
+    <label class="form-label">任務名稱 *</label>
+    <input class="form-input" type="text" id="q-name" placeholder="例：閱讀 30 分鐘" maxlength="30">
+    <label class="form-label">說明（選填）</label>
+    <textarea class="form-input" id="q-desc" placeholder="補充細節..."></textarea>
+    <label class="form-label">選擇圖示</label>
+    <div class="icon-grid" id="icon-grid"></div>
+    <label class="form-label">XP 值</label>
+    <div class="xp-row">
+      <button class="xp-pick sel" onclick="pickXP(this,10)">+10</button>
+      <button class="xp-pick" onclick="pickXP(this,25)">+25</button>
+      <button class="xp-pick" onclick="pickXP(this,50)">+50</button>
+      <button class="xp-pick" onclick="pickXP(this,100)">+100</button>
+    </div>
+    <label class="form-label">完成後的獎勵（選填）</label>
+    <input class="form-input" type="text" id="q-reward" placeholder="例：吃一顆糖、看 15 分鐘影片" maxlength="40">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeOverlay('add-overlay')">取消</button>
+      <button class="btn-save" onclick="saveQuest()">加入任務 ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- level up modal -->
+<div class="overlay" id="lu-overlay">
+  <div class="modal">
+    <div class="lu-box">
+      <div class="lu-badge" id="lu-badge">🏆</div>
+      <div class="lu-title" id="lu-title">升級！</div>
+      <div class="lu-sub" id="lu-sub">你解鎖了新等級</div>
+      <button class="btn-awesome" onclick="closeOverlay('lu-overlay')">太棒了！繼續衝 ⚡</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LEVELS = [
+  {name:'新手',xp:0,icon:'🌱'},
+  {name:'學徒',xp:100,icon:'📖'},
+  {name:'探索者',xp:250,icon:'🧭'},
+  {name:'冒險家',xp:500,icon:'🗺️'},
+  {name:'勇士',xp:900,icon:'⚔️'},
+  {name:'英雄',xp:1500,icon:'🛡️'},
+  {name:'傳奇',xp:2500,icon:'👑'},
+  {name:'神話',xp:4000,icon:'🌟'},
+];
+const LV_REWARDS = [
+  {lv:2,icon:'🎖️',name:'學徒徽章解鎖'},
+  {lv:3,icon:'🧭',name:'探索者稱號 — 解鎖無限任務'},
+  {lv:5,icon:'⚔️',name:'勇士稱號 — 解鎖每週回顧'},
+  {lv:7,icon:'👑',name:'傳奇稱號 — 解鎖特殊主題'},
+  {lv:8,icon:'🌟',name:'神話稱號 — 終極成就達成'},
+];
+const ST_REWARDS = [
+  {days:3,icon:'✨',name:'3天：獲得「堅持者」標記'},
+  {days:7,icon:'🔥',name:'7天：火焰特效升級'},
+  {days:14,icon:'💎',name:'14天：鑽石邊框解鎖'},
+  {days:21,icon:'🚀',name:'21天：習慣養成達人'},
+  {days:30,icon:'🏆',name:'30天：月亮守護者稱號'},
+];
+const ICONS = ['📚','🏃','💧','🧘','🎯','💪','🍎','🎨','🎵','💻','🌅','✍️','🧹','🌿','🤸','🔬','🎮','☕','🧠','🌙','🏊','🚴','📝','🎤'];
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('dq_state');
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  return {
+    streak: 0,
+    xp: 0,
+    totalCompleted: 0,
+    quests: [
+      {id:1,name:'喝 8 杯水',desc:'保持每日水分',icon:'💧',xp:10,reward:'',done:false},
+      {id:2,name:'閱讀 30 分鐘',desc:'讀任何你喜歡的書',icon:'📚',xp:25,reward:'吃一顆糖',done:false},
+      {id:3,name:'運動 20 分鐘',desc:'散步或居家運動',icon:'🏃',xp:50,reward:'看 15 分鐘影片',done:false},
+    ],
+    nextId: 4,
+    lastDate: '',
+  };
+}
+
+function saveState() {
+  localStorage.setItem('dq_state', JSON.stringify(S));
+}
+
+let S = loadState();
+
+// daily reset
+function checkDailyReset() {
+  const today = new Date().toDateString();
+  if (S.lastDate && S.lastDate !== today) {
+    const allDone = S.quests.length > 0 && S.quests.every(q => q.done);
+    if (!allDone && S.lastDate) {
+      S.streak = 0;
+    }
+    S.quests.forEach(q => q.done = false);
+  }
+  S.lastDate = today;
+  saveState();
+}
+checkDailyReset();
+
+let selIcon = '📚';
+let selXP = 10;
+let toastTimer = null;
+
+function getLvInfo(xp) {
+  let lv = 1, info = LEVELS[0];
+  for(let i=1;i<LEVELS.length;i++){
+    if(xp >= LEVELS[i].xp){ lv=i+1; info=LEVELS[i]; }
+  }
+  const next = LEVELS[lv] || null;
+  const prevXP = info.xp;
+  const nextXP = next ? next.xp : prevXP;
+  const pct = next ? Math.min(100, Math.round((xp-prevXP)/(nextXP-prevXP)*100)) : 100;
+  const label = next ? `${xp-prevXP} / ${nextXP-prevXP} XP` : 'MAX';
+  return { lv, name: info.name, icon: info.icon, pct, label };
+}
+
+function render() {
+  // date
+  const today = new Date();
+  document.getElementById('date-chip').textContent =
+    today.toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'short'});
+
+  // streak
+  document.getElementById('streak-num').textContent = S.streak;
+
+  // week dots
+  const days = ['一','二','三','四','五','六','日'];
+  const dow = (today.getDay()+6)%7;
+  let dotsHtml = '';
+  for(let i=0;i<7;i++){
+    let cls = i < dow ? 'wd wd-done' : i===dow ? 'wd wd-today' : 'wd wd-future';
+    dotsHtml += `<div class="${cls}">${days[i]}</div>`;
+  }
+  document.getElementById('week-dots').innerHTML = dotsHtml;
+
+  // xp / level
+  const lv = getLvInfo(S.xp);
+  document.getElementById('level-label').textContent = `Lv.${lv.lv} ${lv.name}`;
+  document.getElementById('xp-nums').textContent = lv.label;
+  document.getElementById('xp-fill').style.width = lv.pct + '%';
+
+  // stats
+  const done = S.quests.filter(q=>q.done).length;
+  document.getElementById('s-done').textContent = done;
+  document.getElementById('s-total').textContent = S.quests.length;
+  document.getElementById('s-xp').textContent = S.xp;
+
+  // quests
+  const ql = document.getElementById('quest-list');
+  ql.innerHTML = '';
+  if(S.quests.length === 0){
+    ql.innerHTML = `<div class="empty-state"><div class="big-icon">🎯</div>還沒有任務，點下方按鈕新增吧！</div>`;
+  } else {
+    S.quests.forEach(q => {
+      const div = document.createElement('div');
+      div.className = 'quest-card' + (q.done ? ' done' : '');
+      div.id = 'qc-'+q.id;
+      div.onclick = () => completeQuest(q.id);
+      const xpCls = q.xp >= 50 ? 'xp-l' : q.xp >= 25 ? 'xp-m' : 'xp-s';
+      div.innerHTML = `
+        <div class="q-icon">${q.icon}</div>
+        <div class="q-body">
+          <div class="qtitle">${q.name}</div>
+          ${q.desc ? `<div class="qdesc">${q.desc}</div>` : ''}
+          ${q.reward ? `<span class="q-reward-tag">🎁 ${q.reward}</span>` : ''}
+        </div>
+        <span class="q-xp ${xpCls}">+${q.xp}</span>
+        <div class="q-check">${q.done ? '✓' : ''}</div>
+        <div class="xp-float">+${q.xp} XP</div>
+      `;
+      ql.appendChild(div);
+    });
+  }
+
+  // level rewards
+  const lvR = document.getElementById('lv-rewards');
+  lvR.innerHTML = LV_REWARDS.map(r => {
+    const ul = lv.lv >= r.lv;
+    return `<div class="reward-item">
+      <span class="ri-icon">${r.icon}</span>
+      <span class="ri-name">${r.name}</span>
+      ${ul ? '<span class="ri-unlocked">✓ 已解鎖</span>' : `<span class="ri-locked">Lv.${r.lv}</span>`}
+    </div>`;
+  }).join('');
+
+  // streak rewards
+  const stR = document.getElementById('st-rewards');
+  stR.innerHTML = ST_REWARDS.map(r => {
+    const ul = S.streak >= r.days;
+    return `<div class="reward-item">
+      <span class="ri-icon">${r.icon}</span>
+      <span class="ri-name">${r.name}</span>
+      ${ul ? '<span class="ri-unlocked">✓ 已解鎖</span>' : `<span class="ri-locked">${r.days} 天</span>`}
+    </div>`;
+  }).join('');
+}
+
+function completeQuest(id) {
+  const q = S.quests.find(x=>x.id===id);
+  if(!q || q.done) return;
+  q.done = true;
+
+  const prevLv = getLvInfo(S.xp).lv;
+  S.xp += q.xp;
+  S.totalCompleted++;
+
+  // animate card
+  const card = document.getElementById('qc-'+id);
+  if(card){
+    card.classList.add('flash-complete');
+    setTimeout(()=>card.classList.remove('flash-complete'), 600);
+  }
+
+  const allDone = S.quests.every(x=>x.done);
+  if(allDone && S.quests.length > 0){
+    S.streak++;
+    // flame pop
+    const fl = document.getElementById('flame');
+    fl.classList.add('pop');
+    setTimeout(()=>fl.classList.remove('pop'),400);
+    showToast('🔥 今日全部完成！連勝 +1 天');
+    checkStreakMilestone();
+  } else {
+    const msg = q.reward ? `+${q.xp} XP！別忘了：${q.reward} 🎁` : `+${q.xp} XP！繼續加油 💪`;
+    showToast(msg);
+  }
+
+  const newLv = getLvInfo(S.xp).lv;
+  if(newLv > prevLv){
+    const lvInfo = getLvInfo(S.xp);
+    setTimeout(()=>{
+      document.getElementById('lu-badge').textContent = lvInfo.icon;
+      document.getElementById('lu-title').textContent = `升到 Lv.${lvInfo.lv} ${lvInfo.name}！`;
+      document.getElementById('lu-sub').textContent = `累積 ${S.xp} XP，繼續保持！`;
+      document.getElementById('lu-overlay').classList.add('open');
+    }, 700);
+  }
+
+  saveState();
+  render();
+}
+
+function checkStreakMilestone() {
+  const m = ST_REWARDS.find(r => r.days === S.streak);
+  if(m){
+    const el = document.getElementById('milestone');
+    el.textContent = `${m.icon} 里程碑解鎖：${m.name}`;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 5000);
+  }
+}
+
+function switchTab(t){
+  document.getElementById('tab-today').style.display = t==='today' ? '' : 'none';
+  document.getElementById('tab-rewards').style.display = t==='rewards' ? '' : 'none';
+  document.querySelectorAll('.tab').forEach((el,i)=>{
+    el.classList.toggle('active',(i===0&&t==='today')||(i===1&&t==='rewards'));
+  });
+}
+
+function openAdd(){
+  document.getElementById('q-name').value='';
+  document.getElementById('q-desc').value='';
+  document.getElementById('q-reward').value='';
+  selIcon='📚'; selXP=10;
+  document.getElementById('icon-grid').innerHTML = ICONS.map(ic=>
+    `<div class="icon-opt${ic===selIcon?' sel':''}" onclick="pickIcon(this,'${ic}')">${ic}</div>`
+  ).join('');
+  document.querySelectorAll('.xp-pick').forEach((el,i)=>el.classList.toggle('sel',i===0));
+  document.getElementById('add-overlay').classList.add('open');
+}
+
+function pickIcon(el, ic){
+  selIcon = ic;
+  document.querySelectorAll('.icon-opt').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function pickXP(el, xp){
+  selXP = xp;
+  document.querySelectorAll('.xp-pick').forEach(e=>e.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function saveQuest(){
+  const name = document.getElementById('q-name').value.trim();
+  if(!name){ document.getElementById('q-name').focus(); return; }
+  S.quests.push({
+    id: S.nextId++,
+    name,
+    desc: document.getElementById('q-desc').value.trim(),
+    icon: selIcon,
+    xp: selXP,
+    reward: document.getElementById('q-reward').value.trim(),
+    done: false,
+  });
+  closeOverlay('add-overlay');
+  saveState();
+  render();
+  showToast('任務已加入！');
+}
+
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+
+function showToast(msg){
+  clearTimeout(toastTimer);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// close overlay on bg click
+document.querySelectorAll('.overlay').forEach(el=>{
+  el.addEventListener('click', e=>{ if(e.target===el) el.classList.remove('open'); });
+});
+
+render();
+</script>
+</body>
+</html>
